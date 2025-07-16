@@ -6,11 +6,11 @@ from . import CacheBackend
 class MemoryCache(CacheBackend):
     """In-memory implementation of the cache backend with tag support."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize an empty in-memory cache with tag registry."""
-        self._cache = {}
-        self._tag_registry = {}  # tag -> set of cache keys
-        self._key_tags = {}  # cache_key -> set of tags
+        self._cache: Dict[str, Any] = {}
+        self._tag_registry: Dict[str, set[str]] = {}  # tag -> set of cache keys
+        self._key_tags: Dict[str, set[str]] = {}  # cache_key -> set of tags
 
     def get(self, cache_key: str) -> Any:
         """

@@ -1,27 +1,32 @@
 from typing import Any, Dict, Optional, Iterable
 
-from nicolas.memory import MemoryCache
-from nicolas.redis import RedisCache
+from . import CacheBackend
+from .memory import MemoryCache
+from .redis import RedisCache
+from .sentinel import RedisSentinelCache
 
 
 class Cache:
     """
     A cache implementation with standard cache operations and tag support.
-    Supports both in-memory and Redis backends.
+    Supports in-memory, Redis, and Redis Sentinel backends.
     """
 
-    def __init__(self, backend: str = "memory", **kwargs):
+    def __init__(self, backend: str = "memory", **kwargs: Any) -> None:
         """
         Initialize the cache with the specified backend.
 
         Args:
-            backend: The backend to use ('memory' or 'redis')
+            backend: The backend to use ('memory', 'redis', or 'redis-sentinel')
             **kwargs: Additional arguments to pass to the backend constructor
         """
+        self._backend: CacheBackend
         if backend == "memory":
             self._backend = MemoryCache()
         elif backend == "redis":
             self._backend = RedisCache(**kwargs)
+        elif backend == "redis-sentinel":
+            self._backend = RedisSentinelCache(**kwargs)
         else:
             raise ValueError(f"Unsupported backend: {backend}")
 
@@ -59,7 +64,11 @@ class Cache:
         return self._backend.getall()
 
     def set(
-        self, cache_key: str, value: Any, tags: Optional[Iterable[str]] = None, **kwargs
+        self,
+        cache_key: str,
+        value: Any,
+        tags: Optional[Iterable[str]] = None,
+        **kwargs: Any,
     ) -> None:
         """
         Store a value in the cache with the given key and optional tags.

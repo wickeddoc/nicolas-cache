@@ -1,7 +1,3 @@
-"""Console script for nicolas_cache."""
-
-from nicolas import cache
-
 import typer
 from rich.console import Console
 
@@ -10,7 +6,7 @@ console = Console()
 
 
 @app.command()
-def main():
+def main() -> None:
     """Console script for nicolas_cache."""
     console.print(
         "Replace this message by putting your code into " "nicolas_cache.cli.main"

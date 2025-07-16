@@ -1,47 +1,94 @@
 import pickle
-from typing import Any, Dict, Optional, Iterable
+from typing import Any, Dict, Optional, Iterable, List, Tuple
 
 from . import CacheBackend
 
 
-class RedisCache(CacheBackend):
-    """Redis implementation of the cache backend with tag support."""
+class RedisSentinelCache(CacheBackend):
+    """Redis Sentinel implementation of the cache backend with automatic failover support."""
 
     def __init__(
         self,
-        host: str = "localhost",
-        port: int = 6379,
+        sentinels: List[Tuple[str, int]],
+        service_name: str,
         db: int = 0,
         password: Optional[str] = None,
+        sentinel_password: Optional[str] = None,
         prefix: str = "cache:",
-    ) -> None:
+        socket_timeout: float = 0.1,
+        socket_connect_timeout: float = 0.1,
+        socket_keepalive: bool = True,
+        socket_keepalive_options: Optional[Dict[str, Any]] = None,
+        decode_responses: bool = False,
+    ):
         """
-        Initialize a Redis cache connection.
+        Initialize a Redis Sentinel cache connection with automatic failover.
 
         Args:
-            host: Redis server hostname
-            port: Redis server port
+            sentinels: List of sentinel addresses as (host, port) tuples
+            service_name: Name of the Redis service as configured in Sentinel
             db: Redis database number
-            password: Redis password (if required)
+            password: Redis password for the master/slave instances
+            sentinel_password: Password for Sentinel instances (if required)
             prefix: Key prefix to use for all cache entries
+            socket_timeout: Socket timeout for Redis connections
+            socket_connect_timeout: Socket connection timeout
+            socket_keepalive: Enable TCP keepalive
+            socket_keepalive_options: TCP keepalive options
+            decode_responses: Whether to decode responses (kept False for pickle)
         """
         try:
-            import redis
+            from redis.sentinel import Sentinel
         except ImportError:
             raise ImportError(
                 "Redis package is required. Install with: pip install redis"
             )
 
-        self.redis = redis.Redis(
-            host=host,
-            port=port,
-            db=db,
-            password=password,
-            decode_responses=False,  # We want bytes to handle serialized data
+        # Configure Sentinel connection
+        sentinel_kwargs = {}
+        if sentinel_password:
+            sentinel_kwargs["password"] = sentinel_password
+
+        self.sentinel = Sentinel(
+            sentinels,
+            socket_timeout=socket_timeout,
+            socket_connect_timeout=socket_connect_timeout,
+            socket_keepalive=socket_keepalive,
+            socket_keepalive_options=socket_keepalive_options or {},
+            **sentinel_kwargs,
         )
+
+        # Store connection parameters for master/slave connections
+        self.service_name = service_name
+        self.db = db
+        self.password = password
+        self.decode_responses = decode_responses
         self.prefix = prefix
         self.tag_prefix = f"{prefix}tag:"
         self.key_tags_prefix = f"{prefix}key_tags:"
+
+        # Test the connection by discovering master
+        self._get_master()
+
+    def _get_master(self) -> Any:
+        """Get the current master connection from Sentinel."""
+        return self.sentinel.master_for(
+            self.service_name,
+            socket_timeout=0.1,
+            db=self.db,
+            password=self.password,
+            decode_responses=self.decode_responses,
+        )
+
+    def _get_slave(self) -> Any:
+        """Get a slave connection for read operations."""
+        return self.sentinel.slave_for(
+            self.service_name,
+            socket_timeout=0.1,
+            db=self.db,
+            password=self.password,
+            decode_responses=self.decode_responses,
+        )
 
     def _get_key(self, cache_key: str) -> str:
         """Add prefix to the cache key."""
@@ -65,7 +112,9 @@ class RedisCache(CacheBackend):
         Returns:
             The cached value if the key exists, None otherwise
         """
-        value = self.redis.get(self._get_key(cache_key))
+        # Use slave for read operations
+        redis = self._get_slave()
+        value = redis.get(self._get_key(cache_key))
         if value is None:
             return None
         return pickle.loads(value)
@@ -83,8 +132,11 @@ class RedisCache(CacheBackend):
         result: Dict[str, Any] = {}
         tag_key = self._get_tag_key(tag)
 
+        # Use slave for read operations
+        redis = self._get_slave()
+
         # Get all keys for this tag
-        tagged_keys = self.redis.smembers(tag_key)
+        tagged_keys = redis.smembers(tag_key)
         if not tagged_keys:
             return result
 
@@ -107,8 +159,11 @@ class RedisCache(CacheBackend):
             A dictionary containing all cache key-value pairs
         """
         prefix_len = len(self.prefix)
+        # Use slave for read operations
+        redis = self._get_slave()
+
         # Only get data keys, not tag registry keys
-        keys = self.redis.keys(f"{self.prefix}*")
+        keys = redis.keys(f"{self.prefix}*")
         result: Dict[str, Any] = {}
 
         for key in keys:
@@ -121,7 +176,7 @@ class RedisCache(CacheBackend):
 
             # Process data key
             clean_key = str_key[prefix_len:]
-            value = self.redis.get(key)
+            value = redis.get(key)
             if value is not None:
                 result[clean_key] = pickle.loads(value)
 
@@ -143,15 +198,18 @@ class RedisCache(CacheBackend):
             tags: Optional list of tags to associate with this cache entry
             ttl: Time-to-live in seconds (optional)
         """
+        # Use master for write operations
+        redis = self._get_master()
+
         # First, remove any existing tags for this key
         self._remove_key_from_tags(cache_key)
 
         # Store the value
         serialized = pickle.dumps(value)
         if ttl is not None:
-            self.redis.setex(self._get_key(cache_key), ttl, serialized)
+            redis.setex(self._get_key(cache_key), ttl, serialized)
         else:
-            self.redis.set(self._get_key(cache_key), serialized)
+            redis.set(self._get_key(cache_key), serialized)
 
         # Register tags
         if tags:
@@ -160,14 +218,14 @@ class RedisCache(CacheBackend):
             # Store tags for this key
             key_tags_key = self._get_key_tags_key(cache_key)
             if tag_set:
-                self.redis.sadd(key_tags_key, *tag_set)
+                redis.sadd(key_tags_key, *tag_set)
                 if ttl is not None:
-                    self.redis.expire(key_tags_key, ttl)
+                    redis.expire(key_tags_key, ttl)
 
             # Add key to each tag's set
             for tag in tag_set:
                 tag_key = self._get_tag_key(tag)
-                self.redis.sadd(tag_key, cache_key)
+                redis.sadd(tag_key, cache_key)
                 # No TTL on tag keys - they'll be cleaned up when empty
 
     def delete(self, cache_key: str) -> bool:
@@ -184,11 +242,14 @@ class RedisCache(CacheBackend):
         if not self.exists(cache_key):
             return False
 
+        # Use master for write operations
+        redis = self._get_master()
+
         # Remove from tag registry
         self._remove_key_from_tags(cache_key)
 
         # Remove the value
-        self.redis.delete(self._get_key(cache_key))
+        redis.delete(self._get_key(cache_key))
         return True
 
     def delete_by_tag(self, tag: str) -> int:
@@ -203,8 +264,11 @@ class RedisCache(CacheBackend):
         """
         tag_key = self._get_tag_key(tag)
 
+        # Use slave for read, master will be used in delete()
+        redis = self._get_slave()
+
         # Get all keys with this tag
-        keys = self.redis.smembers(tag_key)
+        keys = redis.smembers(tag_key)
         if not keys:
             return 0
 
@@ -231,7 +295,9 @@ class RedisCache(CacheBackend):
         Returns:
             True if the key exists in the cache, False otherwise
         """
-        return bool(self.redis.exists(self._get_key(cache_key)))
+        # Use slave for read operations
+        redis = self._get_slave()
+        return bool(redis.exists(self._get_key(cache_key)))
 
     def _remove_key_from_tags(self, cache_key: str) -> None:
         """
@@ -242,8 +308,11 @@ class RedisCache(CacheBackend):
         """
         key_tags_key = self._get_key_tags_key(cache_key)
 
+        # Use master for write operations
+        redis = self._get_master()
+
         # Get all tags for this key
-        tags = self.redis.smembers(key_tags_key)
+        tags = redis.smembers(key_tags_key)
 
         # Remove key from each tag's set
         for tag_bytes in tags:
@@ -251,11 +320,11 @@ class RedisCache(CacheBackend):
                 tag_bytes.decode("utf-8") if isinstance(tag_bytes, bytes) else tag_bytes
             )
             tag_key = self._get_tag_key(tag)
-            self.redis.srem(tag_key, cache_key)
+            redis.srem(tag_key, cache_key)
 
             # Remove tag key if empty
-            if self.redis.scard(tag_key) == 0:
-                self.redis.delete(tag_key)
+            if redis.scard(tag_key) == 0:
+                redis.delete(tag_key)
 
         # Remove key's tag set
-        self.redis.delete(key_tags_key)
+        redis.delete(key_tags_key)
