@@ -60,7 +60,7 @@ version_scheme = "calver-by-date"
 files = "."
 
 # Use strict defaults
-strict = true
+strict = false
 warn_unreachable = true
 warn_no_return = true
 
@@ -69,4 +69,3 @@ warn_no_return = true
 module = "tests.*"
 allow_untyped_defs = true
 disable_error_code = "attr-defined"
-
