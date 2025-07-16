@@ -2,7 +2,8 @@
 
 __author__ = """Yves Thommes"""
 __email__ = "hello@wickeddoc.com"
-__version__ = "0.1.0"
+
+from ._version import __version__ as __version__
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Iterable
