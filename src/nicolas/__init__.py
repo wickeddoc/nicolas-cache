@@ -3,7 +3,7 @@
 __author__ = """Yves Thommes"""
 __email__ = "hello@wickeddoc.com"
 
-from ._version import __version__ as __version__
+from ._version import __version__ as __version__ # type: ignore
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Iterable

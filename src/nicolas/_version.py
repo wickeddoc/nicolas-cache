@@ -1,3 +1,4 @@
+# type: ignore
 """Version information for nicolas-cache."""
 
 try:

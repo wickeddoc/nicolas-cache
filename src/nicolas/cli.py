@@ -1,11 +1,11 @@
-import typer
-from rich.console import Console
+import typer # type: ignore
+from rich.console import Console # type: ignore
 
 app = typer.Typer()
 console = Console()
 
 
-@app.command()
+@app.command() # type: ignore
 def main() -> None:
     """Console script for nicolas_cache."""
     console.print(

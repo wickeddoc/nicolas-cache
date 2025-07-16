@@ -26,7 +26,7 @@ class RedisCache(CacheBackend):
             prefix: Key prefix to use for all cache entries
         """
         try:
-            import redis
+            import redis # type: ignore
         except ImportError:
             raise ImportError(
                 "Redis package is required. Install with: pip install redis"

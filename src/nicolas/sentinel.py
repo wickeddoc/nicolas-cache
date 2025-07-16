@@ -38,7 +38,7 @@ class RedisSentinelCache(CacheBackend):
             decode_responses: Whether to decode responses (kept False for pickle)
         """
         try:
-            from redis.sentinel import Sentinel
+            from redis.sentinel import Sentinel # type: ignore
         except ImportError:
             raise ImportError(
                 "Redis package is required. Install with: pip install redis"
