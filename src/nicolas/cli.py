@@ -1,15 +1,15 @@
-import typer # type: ignore
-from rich.console import Console # type: ignore
+import typer  # type: ignore
+from rich.console import Console  # type: ignore
 
 app = typer.Typer()
 console = Console()
 
 
-@app.command() # type: ignore
+@app.command()  # type: ignore
 def main() -> None:
     """Console script for nicolas_cache."""
     console.print(
-        "Replace this message by putting your code into " "nicolas_cache.cli.main"
+        "Replace this message by putting your code into nicolas_cache.cli.main"
     )
     console.print("See Typer documentation at https://typer.tiangolo.com/")
 

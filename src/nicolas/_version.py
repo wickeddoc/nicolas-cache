@@ -14,8 +14,11 @@ except PackageNotFoundError:
     try:
         from setuptools_scm import get_version
         import os
+
         # Get the root directory (two levels up from this file)
-        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        root_dir = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        )
         __version__ = get_version(root=root_dir)
     except (ImportError, OSError, LookupError):
         # Fallback version in CalVer format (YY.MM.DD)

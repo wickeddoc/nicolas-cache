@@ -39,7 +39,7 @@ class TestMemoryCache:
         self.cache.set("key1", "value1")
         self.cache.set("key2", "value2")
         self.cache.set("key3", "value3")
-        
+
         all_entries = self.cache.getall()
         assert len(all_entries) == 3
         assert all_entries["key1"] == "value1"
@@ -51,7 +51,7 @@ class TestMemoryCache:
         self.cache.set("key1", "value1", tags=["tag1", "tag2"])
         self.cache.set("key2", "value2", tags=["tag1", "tag3"])
         self.cache.set("key3", "value3", tags=["tag2"])
-        
+
         assert self.cache.get("key1") == "value1"
         assert self.cache.get("key2") == "value2"
         assert self.cache.get("key3") == "value3"
@@ -61,17 +61,17 @@ class TestMemoryCache:
         self.cache.set("key1", "value1", tags=["tag1", "tag2"])
         self.cache.set("key2", "value2", tags=["tag1", "tag3"])
         self.cache.set("key3", "value3", tags=["tag2"])
-        
+
         tag1_entries = self.cache.get_by_tag("tag1")
         assert len(tag1_entries) == 2
         assert tag1_entries["key1"] == "value1"
         assert tag1_entries["key2"] == "value2"
-        
+
         tag2_entries = self.cache.get_by_tag("tag2")
         assert len(tag2_entries) == 2
         assert tag2_entries["key1"] == "value1"
         assert tag2_entries["key3"] == "value3"
-        
+
         tag3_entries = self.cache.get_by_tag("tag3")
         assert len(tag3_entries) == 1
         assert tag3_entries["key2"] == "value2"
@@ -86,16 +86,16 @@ class TestMemoryCache:
         self.cache.set("key1", "value1", tags=["tag1", "tag2"])
         self.cache.set("key2", "value2", tags=["tag1", "tag3"])
         self.cache.set("key3", "value3", tags=["tag2"])
-        
+
         # Delete all entries with tag1
         count = self.cache.delete_by_tag("tag1")
         assert count == 2
-        
+
         # Verify entries are deleted
         assert self.cache.get("key1") is None
         assert self.cache.get("key2") is None
         assert self.cache.get("key3") == "value3"  # Should still exist
-        
+
         # Verify tag cleanup
         assert self.cache.get_by_tag("tag1") == {}
         assert len(self.cache.get_by_tag("tag2")) == 1
@@ -109,14 +109,14 @@ class TestMemoryCache:
         """Test updating a key with new tags."""
         # Set initial value with tags
         self.cache.set("key1", "value1", tags=["tag1", "tag2"])
-        
+
         # Update with new tags
         self.cache.set("key1", "value1_updated", tags=["tag3", "tag4"])
-        
+
         # Verify old tags are removed
         assert self.cache.get_by_tag("tag1") == {}
         assert self.cache.get_by_tag("tag2") == {}
-        
+
         # Verify new tags are added
         tag3_entries = self.cache.get_by_tag("tag3")
         assert tag3_entries["key1"] == "value1_updated"
@@ -126,21 +126,21 @@ class TestMemoryCache:
         # List
         self.cache.set("list_key", [1, 2, 3, 4])
         assert self.cache.get("list_key") == [1, 2, 3, 4]
-        
+
         # Dictionary
         data_dict = {"name": "test", "value": 42, "nested": {"a": 1}}
         self.cache.set("dict_key", data_dict)
         assert self.cache.get("dict_key") == data_dict
-        
+
         # Custom object
         class TestObject:
             def __init__(self, x, y):
                 self.x = x
                 self.y = y
-            
+
             def __eq__(self, other):
                 return self.x == other.x and self.y == other.y
-        
+
         obj = TestObject(10, 20)
         self.cache.set("obj_key", obj)
         retrieved = self.cache.get("obj_key")

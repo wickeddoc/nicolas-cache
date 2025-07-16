@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 try:
     import redis
+
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
@@ -14,6 +15,7 @@ from nicolas.redis import RedisCache
 @dataclass
 class SampleObject:
     """Sample object for pickling tests."""
+
     x: int
     y: int
 
@@ -78,7 +80,7 @@ class TestRedisCache:
         self.cache.set("key1", "value1")
         self.cache.set("key2", "value2")
         self.cache.set("key3", "value3")
-        
+
         all_entries = self.cache.getall()
         assert len(all_entries) == 3
         assert all_entries["key1"] == "value1"
@@ -90,7 +92,7 @@ class TestRedisCache:
         self.cache.set("key1", "value1", tags=["tag1", "tag2"])
         self.cache.set("key2", "value2", tags=["tag1", "tag3"])
         self.cache.set("key3", "value3", tags=["tag2"])
-        
+
         assert self.cache.get("key1") == "value1"
         assert self.cache.get("key2") == "value2"
         assert self.cache.get("key3") == "value3"
@@ -100,17 +102,17 @@ class TestRedisCache:
         self.cache.set("key1", "value1", tags=["tag1", "tag2"])
         self.cache.set("key2", "value2", tags=["tag1", "tag3"])
         self.cache.set("key3", "value3", tags=["tag2"])
-        
+
         tag1_entries = self.cache.get_by_tag("tag1")
         assert len(tag1_entries) == 2
         assert tag1_entries["key1"] == "value1"
         assert tag1_entries["key2"] == "value2"
-        
+
         tag2_entries = self.cache.get_by_tag("tag2")
         assert len(tag2_entries) == 2
         assert tag2_entries["key1"] == "value1"
         assert tag2_entries["key3"] == "value3"
-        
+
         tag3_entries = self.cache.get_by_tag("tag3")
         assert len(tag3_entries) == 1
         assert tag3_entries["key2"] == "value2"
@@ -125,16 +127,16 @@ class TestRedisCache:
         self.cache.set("key1", "value1", tags=["tag1", "tag2"])
         self.cache.set("key2", "value2", tags=["tag1", "tag3"])
         self.cache.set("key3", "value3", tags=["tag2"])
-        
+
         # Delete all entries with tag1
         count = self.cache.delete_by_tag("tag1")
         assert count == 2
-        
+
         # Verify entries are deleted
         assert self.cache.get("key1") is None
         assert self.cache.get("key2") is None
         assert self.cache.get("key3") == "value3"  # Should still exist
-        
+
         # Verify tag cleanup
         assert self.cache.get_by_tag("tag1") == {}
         assert len(self.cache.get_by_tag("tag2")) == 1
@@ -148,14 +150,14 @@ class TestRedisCache:
         """Test updating a key with new tags."""
         # Set initial value with tags
         self.cache.set("key1", "value1", tags=["tag1", "tag2"])
-        
+
         # Update with new tags
         self.cache.set("key1", "value1_updated", tags=["tag3", "tag4"])
-        
+
         # Verify old tags are removed
         assert self.cache.get_by_tag("tag1") == {}
         assert self.cache.get_by_tag("tag2") == {}
-        
+
         # Verify new tags are added
         tag3_entries = self.cache.get_by_tag("tag3")
         assert tag3_entries["key1"] == "value1_updated"
@@ -164,14 +166,14 @@ class TestRedisCache:
         """Test TTL (time-to-live) functionality."""
         # Set a key with 2 second TTL
         self.cache.set("ttl_key", "ttl_value", ttl=2)
-        
+
         # Verify it exists
         assert self.cache.get("ttl_key") == "ttl_value"
         assert self.cache.exists("ttl_key") is True
-        
+
         # Wait for expiration
         time.sleep(3)
-        
+
         # Verify it's expired
         assert self.cache.get("ttl_key") is None
         assert self.cache.exists("ttl_key") is False
@@ -180,13 +182,13 @@ class TestRedisCache:
         """Test TTL with tags."""
         # Set a key with tags and TTL
         self.cache.set("ttl_key", "ttl_value", tags=["ttl_tag"], ttl=2)
-        
+
         # Verify tag lookup works
         assert len(self.cache.get_by_tag("ttl_tag")) == 1
-        
+
         # Wait for expiration
         time.sleep(3)
-        
+
         # Verify tag lookup returns empty after expiration
         assert self.cache.get_by_tag("ttl_tag") == {}
 
@@ -195,12 +197,12 @@ class TestRedisCache:
         # List
         self.cache.set("list_key", [1, 2, 3, 4])
         assert self.cache.get("list_key") == [1, 2, 3, 4]
-        
+
         # Dictionary
         data_dict = {"name": "test", "value": 42, "nested": {"a": 1}}
         self.cache.set("dict_key", data_dict)
         assert self.cache.get("dict_key") == data_dict
-        
+
         # Custom object (using a module-level class that can be pickled)
         obj = SampleObject(10, 20)
         self.cache.set("obj_key", obj)
@@ -231,7 +233,7 @@ class TestRedisCache:
         custom_cache = RedisCache(prefix="custom:prefix:")
         try:
             custom_cache.set("key1", "value1")
-            
+
             # Verify the key is stored with custom prefix
             assert custom_cache.redis.exists("custom:prefix:key1")
             assert custom_cache.get("key1") == "value1"
