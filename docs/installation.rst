@@ -4,48 +4,88 @@
 Installation
 ============
 
+Requirements
+------------
 
-Stable release
---------------
+* Python 3.9 or higher
+* Optional: Redis server for Redis-based backends
+
+Quick Install
+-------------
 
 To install Nicolas Cache, run this command in your terminal:
 
 .. code-block:: console
 
-    $ pip install nicolas-cache
+    $ pip install nicolas
 
-This is the preferred method to install Nicolas Cache, as it will always install the most recent stable release.
+This will install the package with all core dependencies including Redis support.
 
-If you don't have `pip`_ installed, this `Python installation guide`_ can guide
-you through the process.
-
-.. _pip: https://pip.pypa.io
-.. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
-
-
-From sources
+From Sources
 ------------
 
 The sources for Nicolas Cache can be downloaded from the `Github repo`_.
 
-You can either clone the public repository:
+Clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/wickeddoc/nicolas-cache
+    $ git clone https://github.com/wickeddoc/nicolas-cache.git
+    $ cd nicolas-cache
+    $ pip install -e .
 
-Or download the `tarball`_:
+Development Installation
+------------------------
+
+For development with all tools:
 
 .. code-block:: console
 
-    $ curl -OJL https://github.com/wickeddoc/nicolas-cache/tarball/master
+    $ pip install -e ".[dev]"
 
-Once you have a copy of the source, you can install it with:
+This includes pytest, coverage, mypy, ruff, and other development tools.
+
+Backend Requirements
+--------------------
+
+**Memory Backend** (no additional requirements):
+
+.. code-block:: python
+
+    from nicolas.cache import Cache
+    cache = Cache(backend="memory")
+
+**Redis Backend** (requires Redis server):
 
 .. code-block:: console
 
-    $ python setup.py install
+    # Install Redis (Ubuntu/Debian)
+    $ sudo apt-get install redis-server
+    
+    # Or with Docker
+    $ docker run -d -p 6379:6379 redis:7-alpine
 
+**Redis Sentinel** (for high availability):
+
+.. code-block:: python
+
+    cache = Cache(
+        backend="redis-sentinel",
+        sentinels=[("localhost", 26379)],
+        service_name="mymaster"
+    )
+
+Verify Installation
+-------------------
+
+.. code-block:: python
+
+    import nicolas
+    print(f"Version: {nicolas.__version__}")
+    
+    from nicolas.cache import Cache
+    cache = Cache(backend="memory")
+    cache.set("test", "value")
+    assert cache.get("test") == "value"
 
 .. _Github repo: https://github.com/wickeddoc/nicolas-cache
-.. _tarball: https://github.com/wickeddoc/nicolas-cache/tarball/master
