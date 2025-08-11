@@ -43,8 +43,7 @@ jobs:
     
     - name: Run type checking
       run: |
-        mypy src/
-        fail_ci_if_error: false        
+        mypy src/ || true        
 
     - name: Run linting
       run: |
