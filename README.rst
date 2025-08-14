@@ -28,6 +28,13 @@ Features
 
 * TODO
 
+
+Disclaimer
+----------
+
+This project has been mainly developed using Claude Code (claude.ai/code), an AI-powered coding assistant.
+
+
 Credits
 -------
 
