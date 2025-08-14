@@ -16,7 +16,7 @@ maintainers = [
 classifiers = [
 
 ]
-license = "MIT"
+license = {text = "Unlicense"}
 dependencies = [
   "redis",
   "typer"

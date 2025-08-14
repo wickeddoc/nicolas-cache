@@ -16,7 +16,7 @@ Nicolas Cache
 Python Caching library with tagging support
 
 
-* Free software: MIT license
+* Free software: Unlicense
 * Documentation: https://nicolas-cache.readthedocs.io.
 
 
@@ -36,7 +36,3 @@ Credits
 -------
 
 This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
-# CalVer versioning updated
