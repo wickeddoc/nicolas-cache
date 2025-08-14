@@ -119,8 +119,8 @@ jobs:
       # No 'with' block needed - uses OIDC automatically
       # 
       # For API Token (uncomment below):
-      # with:
-      #   password: ${{ secrets.PYPI_API_TOKEN }}
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}
     
 
   release:
