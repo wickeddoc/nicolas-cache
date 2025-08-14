@@ -115,11 +115,12 @@ jobs:
     - name: Upload to PyPI (on tag)
       if: startsWith(github.ref, 'refs/tags/')
       uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        # If using API token (stored in PYPI_API_TOKEN secret):
-        # password: ${{ secrets.PYPI_API_TOKEN }}
-        # If using Trusted Publishing, comment out the password line above
-        # The action will automatically use OIDC
+      # For Trusted Publishing (recommended):
+      # No 'with' block needed - uses OIDC automatically
+      # 
+      # For API Token (uncomment below):
+      # with:
+      #   password: ${{ secrets.PYPI_API_TOKEN }}
     
 
   release:
