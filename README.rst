@@ -35,4 +35,4 @@ This project has been mainly developed using Claude Code (claude.ai/code), an AI
 Credits
 -------
 
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
+This package was created with Cookiecutter and the `audreyr/cookiecutter-pypackage` project template.
