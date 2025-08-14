@@ -6,9 +6,6 @@ Nicolas Cache
 .. image:: https://img.shields.io/pypi/v/nicolas-cache.svg
         :target: https://pypi.python.org/pypi/nicolas-cache
 
-.. image:: https://img.shields.io/travis/wickeddoc/nicolas-cache.svg
-        :target: https://travis-ci.com/wickeddoc/nicolas-cache
-
 .. image:: https://readthedocs.org/projects/nicolas-cache/badge/?version=latest
         :target: https://nicolas-cache.readthedocs.io/en/latest/?version=latest
         :alt: Documentation Status
